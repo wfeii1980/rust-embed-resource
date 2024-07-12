@@ -86,10 +86,15 @@ impl Compiler {
         let out_file = format!("{}/{}.lib", out_dir, prefix);
         match self.tp {
             CompilerType::LlvmRc { has_no_preprocess } => {
+                let mut builder = cc::Build::new();
+                // WSL '-xc' It is required for cc (gcc)
+                if builder.get_compiler().is_like_gnu() {
+                    builder.flag("-xc");
+                }
+
                 let preprocessed_path = format!("{}/{}-preprocessed.rc", out_dir, prefix);
                 fs::write(&preprocessed_path,
-                          apply_macros_cc(cc::Build::new().define("RC_INVOKED", None), macros)
-                              .flag("-xc")
+                          apply_macros_cc(builder.define("RC_INVOKED", None), macros)
                               .file(resource)
                               .cargo_metadata(false)
                               .include(out_dir)
